@@ -16,7 +16,7 @@ function addTask() {
     taskTextElement.textContent = taskText;
     task.appendChild(taskTextElement);
 
-    //Legg til bilde knapp hvis bilde er lagt til
+    //Legg til bildee knapp hvis bilde er lagt til
     if (image) {
         var imageButton = document.createElement("button");
         imageButton.textContent = "🖼️";
