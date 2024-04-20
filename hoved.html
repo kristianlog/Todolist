@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oppgaver</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Oppgaver</h1>
+        <div class="task-input-container">
+        <input type="text" id="taskInput" placeholder="Legg til ny oppgave...">
+        <button onclick="addTask()">Legg til</button>
+    </div>
+        <input type="file" id="imageInput" accept="image/*">
+        <div id="taskList" class="task-list"></div>
+        <div id="completedList" class="completed-list"></div>
+
+            <!--Task Item Edit-->
+            <div class="task-item">
+                <input type="checkbox" class="task-checkbox">
+                <span class="task-name">Oppgave navn</span>
+                <div class="task-actions">
+                    <button class="edit-task">Rediger</button>
+                    <button class="delete-task">Slett</button>
+                </div>
+            </div>
+    </div>
+
+    <!-- Modal for displaying enlarged image -->
+    <div id="imageModal" class="modal">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <img id="modalImage" class="modal-content">
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
