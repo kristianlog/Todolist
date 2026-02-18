@@ -22,6 +22,13 @@ const LANG = {
     takePhoto: 'Take Photo / Upload',
     droneOverlay: 'Drone Overlay',
     droneToggle: 'Toggle drone overlay',
+    // Satellite
+    satelliteView: 'Satellite View',
+    toggleSatellite: 'Toggle satellite view',
+    // Pin mode
+    pinMode: 'PIN',
+    pinModeOn: 'Pin mode ON — tap map to drop pins',
+    pinModeOff: 'Pin mode OFF',
     // Infrastructure types
     drain: 'Drain',
     electricalOutlet: 'Electrical Outlet',
@@ -32,6 +39,8 @@ const LANG = {
     language: 'Language',
     droneImage: 'Drone Image',
     uploadDrone: 'Upload drone image',
+    tapToUploadDrone: 'Tap to upload drone / satellite image',
+    droneFormats: 'JPG, PNG, TIFF supported',
     setBounds: 'Set Map Bounds',
     swCorner: 'SW Corner (stand there & tap)',
     neCorner: 'NE Corner (stand there & tap)',
@@ -81,6 +90,13 @@ const LANG = {
     takePhoto: 'Ta bilde / Last opp',
     droneOverlay: 'Dronebilde',
     droneToggle: 'Vis/skjul dronebilde',
+    // Satellite
+    satelliteView: 'Satellittvisning',
+    toggleSatellite: 'Vis/skjul satellittbilde',
+    // Pin mode
+    pinMode: 'PIN',
+    pinModeOn: 'Pin-modus PÅ — trykk på kartet for å sette punkt',
+    pinModeOff: 'Pin-modus AV',
     // Infrastructure types
     drain: 'Sluk',
     electricalOutlet: 'Strømuttak',
@@ -91,6 +107,8 @@ const LANG = {
     language: 'Språk',
     droneImage: 'Dronebilde',
     uploadDrone: 'Last opp dronebilde',
+    tapToUploadDrone: 'Trykk for å laste opp drone-/satellittbilde',
+    droneFormats: 'JPG, PNG, TIFF støttes',
     setBounds: 'Sett kartgrenser',
     swCorner: 'SV-hjørne (stå der og trykk)',
     neCorner: 'NØ-hjørne (stå der og trykk)',

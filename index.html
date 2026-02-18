@@ -56,14 +56,51 @@
         <span class="chip-icon">🔧</span> <span data-lang="valveBox">Valve Box</span>
       </button>
     </div>
+    <!-- Pin mode crosshair -->
+    <div id="pinCrosshair" class="pin-crosshair">
+      <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+        <circle cx="24" cy="24" r="6" stroke="#f59e0b" stroke-width="3" fill="rgba(245,158,11,0.15)"/>
+        <line x1="24" y1="4" x2="24" y2="16" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="24" y1="32" x2="24" y2="44" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="4" y1="24" x2="16" y2="24" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="32" y1="24" x2="44" y2="24" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+
+    <!-- Pin mode type selector bar -->
+    <div id="pinTypeBar" class="pin-type-bar">
+      <button class="pin-type-btn active" data-pin-type="drain" onclick="selectPinType('drain')">
+        <span class="pin-type-emoji">🕳️</span> <span data-lang="drain">Drain</span>
+      </button>
+      <button class="pin-type-btn" data-pin-type="electricalOutlet" onclick="selectPinType('electricalOutlet')">
+        <span class="pin-type-emoji">⚡</span> <span data-lang="electricalOutlet">Electrical</span>
+      </button>
+      <button class="pin-type-btn" data-pin-type="wateringSystem" onclick="selectPinType('wateringSystem')">
+        <span class="pin-type-emoji">💧</span> <span data-lang="wateringSystem">Watering</span>
+      </button>
+      <button class="pin-type-btn" data-pin-type="sprinklerHead" onclick="selectPinType('sprinklerHead')">
+        <span class="pin-type-emoji">⛲</span> <span data-lang="sprinklerHead">Sprinkler</span>
+      </button>
+      <button class="pin-type-btn" data-pin-type="valveBox" onclick="selectPinType('valveBox')">
+        <span class="pin-type-emoji">🔧</span> <span data-lang="valveBox">Valve Box</span>
+      </button>
+    </div>
+
     <!-- Map buttons -->
+    <button id="satelliteToggleBtn" class="map-fab satellite-fab" onclick="toggleSatelliteLayer()" title="Toggle satellite view">
+      <span>🛰️</span>
+    </button>
+    <button id="droneToggleBtn" class="map-fab drone-fab" onclick="toggleDroneOverlay()" title="Toggle drone overlay">
+      <span>📸</span>
+    </button>
     <button id="locateBtn" class="map-fab locate-fab" onclick="locateMe()" title="Locate me">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/>
       </svg>
     </button>
-    <button id="droneToggleBtn" class="map-fab drone-fab" onclick="toggleDroneOverlay()" title="Toggle drone overlay">
-      <span>🛰️</span>
+    <button id="pinModeBtn" class="map-fab pin-fab" onclick="togglePinMode()">
+      <span class="pin-icon">📌</span>
+      <span class="pin-label" data-lang="pinMode">PIN</span>
     </button>
     <button id="addInfraBtn" class="map-fab add-fab" onclick="openAddInfraModal()">+</button>
   </div>
@@ -83,8 +120,12 @@
       <!-- Drone Overlay -->
       <div class="settings-section">
         <h3 data-lang="droneOverlay">Drone Overlay</h3>
-        <p class="settings-hint" data-lang="uploadDrone">Upload drone image</p>
-        <input type="file" id="droneImageInput" accept="image/*" onchange="handleDroneUpload(event)">
+        <div id="droneDropzone" class="drone-dropzone" onclick="document.getElementById('droneImageInput').click()">
+          <div class="drone-dropzone-icon">📸</div>
+          <div class="drone-dropzone-text" data-lang="tapToUploadDrone">Tap to upload drone / satellite image</div>
+          <div class="drone-dropzone-hint" data-lang="droneFormats">JPG, PNG, TIFF supported</div>
+        </div>
+        <input type="file" id="droneImageInput" accept="image/*" style="display:none" onchange="handleDroneUpload(event)">
         <div id="droneStatus" class="settings-status"></div>
         <h4 data-lang="setBounds">Set Map Bounds</h4>
         <p class="settings-hint" data-lang="swCorner">SW Corner (stand there &amp; tap)</p>

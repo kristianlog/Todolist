@@ -4,11 +4,18 @@ window.map = null;
 window.droneImageUrl = null;
 let droneOverlayLayer = null;
 let droneOverlayVisible = true;
+let satelliteLayer = null;
+let satelliteVisible = false;
+let streetLayer = null;
 let locationMarker = null;
 let infraMarkers = [];
 let infraData = [];
 let currentFilter = 'all';
 let currentViewInfraId = null;
+
+// Pin mode state
+let pinModeActive = false;
+let pinSelectedType = 'drain';
 
 // --- Initialize Leaflet Map ---
 function initMap() {
@@ -17,15 +24,22 @@ function initMap() {
     attributionControl: false
   }).setView([59.9, 10.7], 15); // Default: Norway area
 
-  // OpenStreetMap tile layer
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  // Street tile layer (default)
+  streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 22,
     maxNativeZoom: 19
   }).addTo(window.map);
 
+  // Satellite tile layer (Esri)
+  satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 22,
+    maxNativeZoom: 19,
+    attribution: '© Esri'
+  });
+
   // Attribution in corner
   L.control.attribution({ position: 'bottomleft', prefix: false })
-    .addAttribution('© OpenStreetMap')
+    .addAttribution('© OpenStreetMap / Esri')
     .addTo(window.map);
 
   // Zoom control on right
@@ -68,8 +82,8 @@ function locateMe(silent) {
       var pulseIcon = L.divIcon({
         className: '',
         html: '<div class="location-pulse"></div>',
-        iconSize: [18, 18],
-        iconAnchor: [9, 9]
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
       });
       locationMarker = L.marker([lat, lng], { icon: pulseIcon, zIndexOffset: 1000 })
         .addTo(window.map);
@@ -77,6 +91,21 @@ function locateMe(silent) {
   }, function() {
     if (!silent) showToast(t('gpsError'));
   }, { enableHighAccuracy: true, timeout: 10000 });
+}
+
+// --- Satellite Layer Toggle ---
+function toggleSatelliteLayer() {
+  var btn = document.getElementById('satelliteToggleBtn');
+  if (satelliteVisible) {
+    window.map.removeLayer(satelliteLayer);
+    btn.classList.remove('active-layer');
+    satelliteVisible = false;
+  } else {
+    window.map.addLayer(satelliteLayer);
+    streetLayer.bringToBack();
+    btn.classList.add('active-layer');
+    satelliteVisible = true;
+  }
 }
 
 // --- Drone Overlay ---
@@ -111,11 +140,14 @@ function toggleDroneOverlay() {
   }
 
   droneOverlayVisible = !droneOverlayVisible;
+  var btn = document.getElementById('droneToggleBtn');
 
   if (droneOverlayVisible && droneOverlayLayer) {
     droneOverlayLayer.addTo(window.map);
+    btn.classList.add('active-layer');
   } else if (droneOverlayLayer) {
     window.map.removeLayer(droneOverlayLayer);
+    btn.classList.remove('active-layer');
   }
 }
 
@@ -125,8 +157,8 @@ function createInfraIcon(type) {
   return L.divIcon({
     className: '',
     html: '<div class="infra-marker" style="background:' + info.color + '">' + info.emoji + '</div>',
-    iconSize: [32, 32],
-    iconAnchor: [16, 16]
+    iconSize: [36, 36],
+    iconAnchor: [18, 18]
   });
 }
 
@@ -169,6 +201,97 @@ function filterInfra(type) {
   });
 
   renderInfraMarkers();
+}
+
+// --- Pin Mode ---
+function togglePinMode() {
+  pinModeActive = !pinModeActive;
+  var btn = document.getElementById('pinModeBtn');
+  var crosshair = document.getElementById('pinCrosshair');
+  var typeBar = document.getElementById('pinTypeBar');
+
+  if (pinModeActive) {
+    btn.classList.add('active');
+    crosshair.classList.add('visible');
+    typeBar.classList.add('visible');
+    showToast(t('pinModeOn'));
+  } else {
+    btn.classList.remove('active');
+    crosshair.classList.remove('visible');
+    typeBar.classList.remove('visible');
+  }
+}
+
+function selectPinType(type) {
+  pinSelectedType = type;
+  document.querySelectorAll('.pin-type-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.getAttribute('data-pin-type') === type);
+  });
+}
+
+// Drop a pin at current GPS location
+function dropPinAtCurrentLocation() {
+  if (!navigator.geolocation) {
+    showToast(t('gpsError'));
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(async function(pos) {
+    var lat = pos.coords.latitude;
+    var lng = pos.coords.longitude;
+
+    var item = {
+      type: pinSelectedType,
+      lat: lat,
+      lng: lng,
+      note: '',
+      photoUrl: '',
+      createdAt: Date.now()
+    };
+
+    try {
+      var saved = await localDB.add('infrastructure', item);
+      infraData.unshift(saved);
+      renderInfraMarkers();
+
+      // Center map on the new pin
+      window.map.setView([lat, lng], window.map.getZoom());
+
+      var typeInfo = INFRA_TYPES[pinSelectedType] || INFRA_TYPES.drain;
+      showToast(typeInfo.emoji + ' ' + t(pinSelectedType) + ' ' + t('saved'));
+    } catch (e) {
+      console.error('Pin save failed:', e);
+      showToast('Error saving pin');
+    }
+  }, function() {
+    showToast(t('gpsError'));
+  }, { enableHighAccuracy: true, timeout: 15000 });
+}
+
+// Handle map click in pin mode - drop pin at tapped location
+function handleMapClickForPin(e) {
+  if (!pinModeActive) return;
+
+  var lat = e.latlng.lat;
+  var lng = e.latlng.lng;
+
+  var item = {
+    type: pinSelectedType,
+    lat: lat,
+    lng: lng,
+    note: '',
+    photoUrl: '',
+    createdAt: Date.now()
+  };
+
+  localDB.add('infrastructure', item).then(function(saved) {
+    infraData.unshift(saved);
+    renderInfraMarkers();
+    var typeInfo = INFRA_TYPES[pinSelectedType] || INFRA_TYPES.drain;
+    showToast(typeInfo.emoji + ' ' + t(pinSelectedType) + ' ' + t('saved'));
+  }).catch(function(e) {
+    console.error('Pin save failed:', e);
+  });
 }
 
 // --- Add Infrastructure Modal ---
@@ -287,7 +410,7 @@ function openViewInfraModal(item) {
   if (item.photoUrl) {
     photoEl.innerHTML = '<img src="' + item.photoUrl + '" alt="photo" onclick="openImageModal(this.src)">';
   } else {
-    photoEl.innerHTML = '<p style="color:#999">' + t('noPhoto') + '</p>';
+    photoEl.innerHTML = '<p style="color:#94a3b8">' + t('noPhoto') + '</p>';
   }
 
   document.getElementById('viewInfraModal').style.display = 'flex';
@@ -312,3 +435,11 @@ async function deleteCurrentInfra() {
     console.error('Delete failed:', e);
   }
 }
+
+// --- Setup map click listener after map init ---
+var _origInitMap = initMap;
+initMap = function() {
+  _origInitMap();
+  // Listen for map clicks for pin mode
+  window.map.on('click', handleMapClickForPin);
+};

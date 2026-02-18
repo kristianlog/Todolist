@@ -1,5 +1,5 @@
 // ===== GREENKEEPER - Service Worker =====
-const CACHE_NAME = 'greenkeeper-v1';
+const CACHE_NAME = 'greenkeeper-v2';
 const ASSETS = [
   '/index.html',
   '/styles.css',
@@ -7,7 +7,7 @@ const ASSETS = [
   '/map.js',
   '/tasks.js',
   '/lang.js',
-  '/firebase-config.js',
+  '/storage.js',
   '/manifest.json'
 ];
 
