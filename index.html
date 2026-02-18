@@ -1,40 +1,218 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Oppgaver</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#2d7a2d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="Golf course infrastructure management and task tracking">
+  <title>Greenkeeper</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Oppgaver</h1>
-        <div class="task-input-container">
-        <input type="text" id="taskInput" placeholder="Legg til ny oppgave...">
-        <button onclick="addTask()">Legg til</button>
-    </div>
-        <input type="file" id="imageInput" accept="image/*">
-        <div id="taskList" class="task-list"></div>
-        <div id="completedList" class="completed-list"></div>
 
-            <!--Task Item Edit-->
-            <div class="task-item">
-                <input type="checkbox" class="task-checkbox">
-                <span class="task-name">Oppgave navn</span>
-                <div class="task-actions">
-                    <button class="edit-task">Rediger</button>
-                    <button class="delete-task">Slett</button>
-                </div>
-            </div>
-    </div>
+  <!-- ===== HEADER ===== -->
+  <header id="appHeader">
+    <h1>Greenkeeper</h1>
+    <button id="langToggle" onclick="toggleLanguage()">NO</button>
+  </header>
 
-    <!-- Modal for displaying enlarged image -->
-    <div id="imageModal" class="modal">
-        <span class="close" onclick="closeModal()">&times;</span>
-        <img id="modalImage" class="modal-content">
+  <!-- ===== TASKS VIEW ===== -->
+  <div id="tasksView" class="view active">
+    <div class="task-input-row">
+      <input type="text" id="taskInput" data-lang-placeholder="taskPlaceholder" placeholder="Add new task..."
+             onkeydown="if(event.key==='Enter')addTask()">
+      <button onclick="addTask()" id="addTaskBtn" data-lang="addTask">Add</button>
     </div>
+    <div id="taskList" class="task-list"></div>
+    <div id="completedSection" style="display:none">
+      <h3 id="completedHeader" data-lang="completed">Completed</h3>
+      <div id="completedList" class="completed-list"></div>
+    </div>
+  </div>
 
-    <script src="script.js"></script>
+  <!-- ===== MAP VIEW ===== -->
+  <div id="mapView" class="view">
+    <div id="map"></div>
+    <!-- Filter bar -->
+    <div id="filterBar" class="filter-bar">
+      <button class="filter-chip active" data-filter="all" onclick="filterInfra('all')" data-lang="filterAll">All</button>
+      <button class="filter-chip" data-filter="drain" onclick="filterInfra('drain')">
+        <span class="chip-icon">🕳️</span> <span data-lang="drain">Drain</span>
+      </button>
+      <button class="filter-chip" data-filter="electricalOutlet" onclick="filterInfra('electricalOutlet')">
+        <span class="chip-icon">⚡</span> <span data-lang="electricalOutlet">Electrical</span>
+      </button>
+      <button class="filter-chip" data-filter="wateringSystem" onclick="filterInfra('wateringSystem')">
+        <span class="chip-icon">💧</span> <span data-lang="wateringSystem">Watering</span>
+      </button>
+      <button class="filter-chip" data-filter="sprinklerHead" onclick="filterInfra('sprinklerHead')">
+        <span class="chip-icon">⛲</span> <span data-lang="sprinklerHead">Sprinkler</span>
+      </button>
+      <button class="filter-chip" data-filter="valveBox" onclick="filterInfra('valveBox')">
+        <span class="chip-icon">🔧</span> <span data-lang="valveBox">Valve Box</span>
+      </button>
+    </div>
+    <!-- Map buttons -->
+    <button id="locateBtn" class="map-fab locate-fab" onclick="locateMe()" title="Locate me">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+        <circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/>
+      </svg>
+    </button>
+    <button id="droneToggleBtn" class="map-fab drone-fab" onclick="toggleDroneOverlay()" title="Toggle drone overlay">
+      <span>🛰️</span>
+    </button>
+    <button id="addInfraBtn" class="map-fab add-fab" onclick="openAddInfraModal()">+</button>
+  </div>
+
+  <!-- ===== SETTINGS VIEW ===== -->
+  <div id="settingsView" class="view">
+    <div class="settings-content">
+      <!-- Language -->
+      <div class="settings-section">
+        <h3 data-lang="language">Language</h3>
+        <div class="settings-row">
+          <button id="langEN" class="lang-btn" onclick="setLanguage('en')">English</button>
+          <button id="langNO" class="lang-btn" onclick="setLanguage('no')">Norsk</button>
+        </div>
+      </div>
+
+      <!-- Drone Overlay -->
+      <div class="settings-section">
+        <h3 data-lang="droneOverlay">Drone Overlay</h3>
+        <p class="settings-hint" data-lang="uploadDrone">Upload drone image</p>
+        <input type="file" id="droneImageInput" accept="image/*" onchange="handleDroneUpload(event)">
+        <div id="droneStatus" class="settings-status"></div>
+        <h4 data-lang="setBounds">Set Map Bounds</h4>
+        <p class="settings-hint" data-lang="swCorner">SW Corner (stand there &amp; tap)</p>
+        <div class="bounds-row">
+          <input type="text" id="swLat" placeholder="Lat" class="bounds-input">
+          <input type="text" id="swLng" placeholder="Lng" class="bounds-input">
+          <button onclick="setBoundsFromGPS('sw')" class="gps-btn" data-lang="setFromGPS">Set from GPS</button>
+        </div>
+        <p class="settings-hint" data-lang="neCorner">NE Corner (stand there &amp; tap)</p>
+        <div class="bounds-row">
+          <input type="text" id="neLat" placeholder="Lat" class="bounds-input">
+          <input type="text" id="neLng" placeholder="Lng" class="bounds-input">
+          <button onclick="setBoundsFromGPS('ne')" class="gps-btn" data-lang="setFromGPS">Set from GPS</button>
+        </div>
+        <button onclick="applyDroneBounds()" class="btn-primary" style="margin-top:10px">
+          <span data-lang="save">Save</span> Bounds
+        </button>
+      </div>
+
+      <!-- Firebase -->
+      <div class="settings-section">
+        <h3 data-lang="firebaseStatus">Firebase Status</h3>
+        <div id="firebaseStatusDisplay" class="settings-status"></div>
+      </div>
+
+      <!-- Clear data -->
+      <div class="settings-section">
+        <button onclick="clearAllData()" class="btn-danger" data-lang="clearData">Clear All Data</button>
+      </div>
+
+      <!-- About -->
+      <div class="settings-section">
+        <h3 data-lang="about">About</h3>
+        <p>Greenkeeper v1.0</p>
+        <p class="settings-hint">Golf course infrastructure management</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== BOTTOM NAVIGATION ===== -->
+  <nav id="bottomNav">
+    <button class="nav-btn active" data-view="tasksView" onclick="switchView('tasksView')">
+      <span class="nav-icon">✓</span>
+      <span class="nav-label" data-lang="tasks">Tasks</span>
+    </button>
+    <button class="nav-btn" data-view="mapView" onclick="switchView('mapView')">
+      <span class="nav-icon">🗺️</span>
+      <span class="nav-label" data-lang="map">Map</span>
+    </button>
+    <button class="nav-btn" data-view="settingsView" onclick="switchView('settingsView')">
+      <span class="nav-icon">⚙️</span>
+      <span class="nav-label" data-lang="settings">Settings</span>
+    </button>
+  </nav>
+
+  <!-- ===== ADD INFRASTRUCTURE MODAL ===== -->
+  <div id="addInfraModal" class="modal-overlay" style="display:none">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h3 data-lang="addInfrastructure">Add Infrastructure</h3>
+        <button class="modal-close" onclick="closeAddInfraModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="gpsStatus" class="gps-status" data-lang="gpsWaiting">Getting GPS position...</div>
+        <input type="hidden" id="infraLat">
+        <input type="hidden" id="infraLng">
+
+        <label data-lang="infrastructureType">Type</label>
+        <select id="infraType">
+          <option value="" data-lang="selectType">Select type...</option>
+          <option value="drain" data-lang="drain">Drain</option>
+          <option value="electricalOutlet" data-lang="electricalOutlet">Electrical Outlet</option>
+          <option value="wateringSystem" data-lang="wateringSystem">Watering System</option>
+          <option value="sprinklerHead" data-lang="sprinklerHead">Sprinkler Head</option>
+          <option value="valveBox" data-lang="valveBox">Valve Box</option>
+        </select>
+
+        <label data-lang="note">Note</label>
+        <textarea id="infraNote" rows="2" data-lang-placeholder="notePlaceholder" placeholder="Add a note..."></textarea>
+
+        <label data-lang="takePhoto">Take Photo / Upload</label>
+        <input type="file" id="infraPhoto" accept="image/*" capture="environment">
+        <div id="infraPhotoPreview"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeAddInfraModal()" data-lang="cancel">Cancel</button>
+        <button class="btn-primary" onclick="saveInfrastructure()" data-lang="save">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== VIEW INFRASTRUCTURE MODAL ===== -->
+  <div id="viewInfraModal" class="modal-overlay" style="display:none">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h3 id="viewInfraTitle">Infrastructure</h3>
+        <button class="modal-close" onclick="closeViewInfraModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="viewInfraType" class="infra-type-badge"></div>
+        <div id="viewInfraCoords" class="infra-coords"></div>
+        <div id="viewInfraDate" class="infra-date"></div>
+        <div id="viewInfraNote" class="infra-note"></div>
+        <div id="viewInfraPhoto" class="infra-photo"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-danger" onclick="deleteCurrentInfra()" data-lang="delete">Delete</button>
+        <button class="btn-secondary" onclick="closeViewInfraModal()" data-lang="cancel">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== IMAGE LIGHTBOX ===== -->
+  <div id="imageModal" class="modal-overlay" style="display:none" onclick="closeImageModal()">
+    <span class="lightbox-close" onclick="closeImageModal()">&times;</span>
+    <img id="lightboxImage" class="lightbox-img">
+  </div>
+
+  <!-- ===== SCRIPTS ===== -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="lang.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="app.js"></script>
+  <script src="map.js"></script>
+  <script src="tasks.js"></script>
 </body>
 </html>
-
