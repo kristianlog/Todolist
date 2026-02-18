@@ -1,0 +1,9 @@
+{
+  "name": "greenkeeper",
+  "version": "1.0.0",
+  "description": "Golf course infrastructure management and task tracking",
+  "scripts": {
+    "dev": "npx live-server --port=3000 --no-browser",
+    "start": "npx live-server --port=3000"
+  }
+}

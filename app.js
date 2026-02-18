@@ -5,8 +5,6 @@ let mapInitialized = false;
 
 // --- Initialize app ---
 window.addEventListener('load', function() {
-  initFirebase();
-  updateFirebaseStatus();
   applyLanguage(currentLang);
   loadTasks();
 
@@ -104,18 +102,6 @@ function openImageModal(src) {
 function closeImageModal() {
   document.getElementById('imageModal').style.display = 'none';
   document.getElementById('lightboxImage').src = '';
-}
-
-// --- Firebase Status ---
-function updateFirebaseStatus() {
-  var el = document.getElementById('firebaseStatusDisplay');
-  if (firebaseReady) {
-    el.textContent = '✅ ' + t('connected');
-    el.style.color = '#155724';
-  } else {
-    el.textContent = '⚠️ ' + t('notConnected');
-    el.style.color = '#856404';
-  }
 }
 
 // --- Drone Bounds (Settings) ---
